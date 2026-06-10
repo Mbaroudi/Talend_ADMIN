@@ -47,6 +47,9 @@ Notes:
   index and fetches it from Maven Central (fallback: Talend's library mirror)
   into the Studio m2, then retries. First build downloads what the job
   actually needs; later builds reuse the cache (persisted in the volume).
+- **Jars Maven cannot resolve** (proprietary drivers, internal routines
+  dependencies...) can be provided manually — see
+  [Providing a library manually](#providing-a-library-manually).
 
 ### `BUILDER=maven` — Maven project / Studio export
 
@@ -135,7 +138,25 @@ docker compose exec tos-builder \
   -d '{"git_url":"https://...","branch":"main","job_name":"MyJob"}'
 ```
 
-## 5. Schedule a job
+## 4b. Providing a library manually
+
+Some jars cannot be fetched from a public Maven repository: Oracle/DB2-style
+proprietary drivers, jars used by your routines, internal SDKs. The TOS
+builder accepts them two ways; both land in the `tos_custom_libs` volume and
+are installed into the Studio m2 (using the Studio's own jar→Maven mapping,
+falling back to Talend's `org.talend.libraries:<name>:6.0.0` convention):
+
+```bash
+# 1. HTTP upload (works from anywhere that reaches the builder)
+curl -F file=@ojdbc8.jar http://localhost:8080/libs     # in-cluster: tos-builder:8080
+
+# 2. Copy into the volume
+docker compose cp ojdbc8.jar tos-builder:/custom-libs/
+```
+
+`GET /libs` lists what has been provided. Installation is idempotent and also
+re-applied before every build, so a jar dropped after a failed build is picked
+up by the automatic retry or the next run.
 
 Enable the **Scheduled Talend Pipeline** job in Rundeck (schedule is disabled by
 default), or add a schedule to any job from the UI.

@@ -31,7 +31,8 @@ RUN chmod +x entrypoint.sh ./scripts/*.sh
 
 ENV TOS_HOME=/opt/tos \
     OUTPUT_DIR=/artifacts \
-    WORKSPACE_DIR=/build
+    WORKSPACE_DIR=/build \
+    CUSTOM_LIBS_DIR=/custom-libs
 
 EXPOSE 8080
 # The API is up immediately; /health reports studio_ready=false until the

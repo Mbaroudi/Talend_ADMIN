@@ -24,6 +24,10 @@ STUDIO="${TOS_HOME}/studio"
 WORKSPACE_DIR="${WORKSPACE_DIR:-/build}"
 OUTPUT_DIR="${OUTPUT_DIR:-/artifacts}"
 HEAP="${TOS_BUILDER_HEAP:-2048m}"
+# Manually provided jars (volume): installed into the Studio m2 before each
+# build and consulted first when the code generator reports a missing jar.
+CUSTOM_LIBS_DIR="${CUSTOM_LIBS_DIR:-/custom-libs}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # The Studio's own Maven repository (persisted in the tos_studio volume):
 # seeded at first logon, then grown ON DEMAND by resolve_missing_jars().
 M2_REPO="${STUDIO}/configuration/.m2/repository"
@@ -83,10 +87,17 @@ resolve_missing_jars() {
     | sed -E 's/^[Mm]issing jars?://' | tr ',' '\n' | sed 's/[^A-Za-z0-9._-]//g' | sort -u)
   for jar in "${jars[@]}"; do
     [ -n "$jar" ] || continue
-    uri="$(grep -o "key=\"${jar}\" value=\"mvn:[^\"]*\"" "${MVN_INDEX}" 2>/dev/null \
+    # 1) manually provided jar (POST /libs or docker compose cp)?
+    if [ -f "${CUSTOM_LIBS_DIR}/${jar}" ]; then
+      "${SCRIPT_DIR}/install-lib.sh" "${CUSTOM_LIBS_DIR}/${jar}" \
+        && { echo "[on-demand] installed ${jar} from ${CUSTOM_LIBS_DIR}"; installed=0; continue; }
+    fi
+    # 2) resolve from a remote Maven repository via the Studio's index.
+    uri="$({ grep -o "key=\"${jar}\" value=\"mvn:[^\"]*\"" "${MVN_INDEX}" 2>/dev/null || true; } \
       | sed -E 's/.*value="mvn:([^"]*)".*/\1/' | head -1)"
     if [ -z "$uri" ]; then
-      echo "[on-demand] WARN: no maven mapping for ${jar} in MavenUriIndex.xml"
+      echo "[on-demand] WARN: no maven mapping for ${jar} — provide it manually:"
+      echo "[on-demand]   curl -F file=@${jar} http://tos-builder:8080/libs"
       continue
     fi
     IFS=/ read -r g a v _ <<< "$uri"
@@ -121,6 +132,15 @@ run_headless_build() {
     -data "${WS}" -consoleLog \
     -project "${PROJECT_NAME}" -job "${JOB_NAME}" -destination "${OUT}/${JOB_NAME}.zip"
 }
+
+# Sweep manually provided jars into the Studio m2 (idempotent, cheap).
+if [ -d "${CUSTOM_LIBS_DIR}" ]; then
+  for custom_jar in "${CUSTOM_LIBS_DIR}"/*.jar; do
+    [ -e "${custom_jar}" ] || continue
+    "${SCRIPT_DIR}/install-lib.sh" "${custom_jar}" >/dev/null \
+      || echo "WARN: failed to install custom lib $(basename "${custom_jar}")" >&2
+  done
+fi
 
 echo "--- headless code generation + build (heap ${HEAP}) ---"
 BUILD_LOG="${WORKSPACE_DIR}/build-${STAMP}.log"

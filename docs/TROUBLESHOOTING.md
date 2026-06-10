@@ -122,10 +122,12 @@ docker compose logs tos-builder
 - Out of memory: raise `TOS_BUILDER_HEAP` in `.env` (e.g. `4096m`).
 - Missing libraries: resolved on demand from Maven Central into the Studio
   m2 (look for `[on-demand]` lines in the build output) — the first build
-  needs network access; later builds use the cache. A
-  `WARN: no maven mapping` line means the jar is not in the Studio's index:
-  drop it manually under
-  `/opt/tos/studio/configuration/.m2/repository/<g>/<a>/<v>/`.
+  needs network access; later builds use the cache.
+- `WARN: no maven mapping for <jar>` or a jar that exists nowhere public
+  (proprietary driver, internal SDK): provide it manually —
+  `curl -F file=@the.jar http://localhost:8080/libs` or
+  `docker compose cp the.jar tos-builder:/custom-libs/` — then re-run the
+  build. See [USAGE § Providing a library manually](USAGE.md#4b-providing-a-library-manually).
 
 ### Build fails in `talend-builder`
 

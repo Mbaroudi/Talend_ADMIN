@@ -197,6 +197,7 @@ services:
     volumes:
       - artifacts:/artifacts
       - tos_studio:/opt/tos
+      - tos_custom_libs:/custom-libs
     networks: [tac-net]
 
   # ---------------------------------------------------------------------------
@@ -302,6 +303,7 @@ volumes:
   artifacts:
   ssh_keys:
   tos_studio:
+  tos_custom_libs:
   prometheus_data:
   grafana_data:
 

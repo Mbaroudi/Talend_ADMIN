@@ -20,7 +20,9 @@ from prometheus_client import CONTENT_TYPE_LATEST, Counter, Histogram, generate_
 app = Flask(__name__)
 
 SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "build-from-sources.sh")
+INSTALL_LIB_SCRIPT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "scripts", "install-lib.sh")
 READY_MARKER = os.path.join(os.getenv("TOS_HOME", "/opt/tos"), ".ready")
+CUSTOM_LIBS_DIR = os.getenv("CUSTOM_LIBS_DIR", "/custom-libs")
 # Headless Eclipse startup + code generation + on-demand library downloads.
 BUILD_TIMEOUT_SECONDS = 3600
 
@@ -54,6 +56,45 @@ def metrics():
 def list_builds():
     with LOCK:
         return jsonify(builds=list(BUILDS), total=len(BUILDS))
+
+
+@app.get("/libs")
+def list_libs():
+    try:
+        jars = sorted(f for f in os.listdir(CUSTOM_LIBS_DIR) if f.endswith(".jar"))
+    except FileNotFoundError:
+        jars = []
+    return jsonify(libs=jars, total=len(jars))
+
+
+@app.post("/libs")
+def upload_lib():
+    """Manually provide a jar the build cannot resolve from Maven.
+
+    curl -F file=@my-driver.jar http://tos-builder:8080/libs
+
+    The jar lands in the custom-libs volume and is installed into the Studio
+    m2 (immediately if the Studio is ready, otherwise before the next build).
+    """
+    upload = request.files.get("file")
+    if upload is None or not upload.filename:
+        return jsonify(error="multipart field 'file' with a .jar is required"), 400
+    name = os.path.basename(upload.filename)
+    if not name.endswith(".jar") or name in (".jar",):
+        return jsonify(error="only .jar files are accepted"), 400
+
+    os.makedirs(CUSTOM_LIBS_DIR, exist_ok=True)
+    path = os.path.join(CUSTOM_LIBS_DIR, name)
+    upload.save(path)
+
+    if not studio_ready():
+        return jsonify(jar=name, installed=False,
+                       message="stored; will be installed before the next build"), 202
+
+    proc = subprocess.run([INSTALL_LIB_SCRIPT, path], capture_output=True, text=True, timeout=60)
+    if proc.returncode != 0:
+        return jsonify(jar=name, installed=False, error=proc.stderr[-1000:]), 500
+    return jsonify(jar=name, installed=True, detail=proc.stdout.strip()), 200
 
 
 @app.post("/build")

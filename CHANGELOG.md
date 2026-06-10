@@ -20,6 +20,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   Central into the Studio m2 (cached in the same volume).
 - `BUILDER` option (`maven` | `tos`) on the **Build and Deploy Talend Job**
   template, and `DEFAULT_BUILDER` env for webhook-triggered builds.
+- Manual library provisioning for jars Maven cannot resolve (proprietary
+  drivers, internal SDKs): `POST /libs` upload endpoint and the
+  `tos_custom_libs` volume (`/custom-libs`), installed into the Studio m2
+  with the Studio's jar→Maven mapping and consulted before any remote
+  download.
 
 ## [0.1.0] - 2026-06-10
 
