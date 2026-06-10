@@ -1,0 +1,48 @@
+# =============================================================================
+# .gitignore for a Talend Studio project versioned in Git
+# (raw sources layout, built by the Talend_ADMIN TOS CI-builder)
+#
+# Rule of thumb: version what YOU author in the Studio (jobs, contexts,
+# metadata, routines, the project descriptor); ignore everything the Studio
+# REGENERATES (Maven structure, Eclipse metadata, code generation caches,
+# logs). Copy this file to the root of your Talend project repository.
+# =============================================================================
+
+# ----- Generated Maven build structure (recreated at every logon/build) -----
+poms/
+
+# ----- Code generation working projects (workspace-level, never sources) ----
+.Java/
+.JETEmitters/
+
+# ----- Eclipse workspace metadata (when the repo root was used as workspace)
+.metadata/
+
+# ----- Eclipse project descriptors (recreated on import) --------------------
+.project
+.classpath
+
+# NOTE: do NOT ignore the project-level `.settings/` directory — it holds
+# Talend project settings (relationship.index, migration_task.index, ...)
+# that belong to the project sources.
+
+# ----- Logs and reports the Studio writes into the project ------------------
+migration.log
+lastGenerated.log
+*.log
+
+# ----- Studio temporary folders ----------------------------------------------
+temp/
+target/
+
+# ----- Optional: job screenshots ---------------------------------------------
+# Binary, regenerated on save, only used for generated documentation.
+# Uncomment to keep diffs clean (jobs build fine without them):
+# *.screenshot
+
+# ----- OS / editor noise ------------------------------------------------------
+.DS_Store
+Thumbs.db
+.idea/
+*.iml
+.vscode/

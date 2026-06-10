@@ -187,8 +187,10 @@ Docker volume.
 | [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Components, execution model, SSH provisioning, networking |
 | [`docs/USAGE.md`](docs/USAGE.md) | Building & running jobs, contexts, JVM options, runner selection, scheduling, webhooks |
 | [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | Every `.env` variable and configuration file explained |
+| [`docs/TALEND-PROJECT-GIT.md`](docs/TALEND-PROJECT-GIT.md) | Versioning a Talend project in Git: layout, `.gitignore`, workflow |
 | [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Common problems and how to diagnose them |
-| [`examples/talend-jobs/`](examples/talend-jobs/README.md) | Expected Talend job repository layout |
+| [`examples/talend-project/`](examples/talend-project/README.md) | Raw Studio sources repository layout + ready-made `.gitignore` |
+| [`examples/talend-jobs/`](examples/talend-jobs/README.md) | Maven project / Studio export repository layout |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Development setup, checks, pull requests |
 | [`CHANGELOG.md`](CHANGELOG.md) | Release history |
 

@@ -35,7 +35,10 @@ my-repo/
 ```
 
 No export step, no pom.xml to maintain: push your project, the builder
-generates and packages the job.
+generates and packages the job. See
+[TALEND-PROJECT-GIT.md](TALEND-PROJECT-GIT.md) for the Git setup (including
+the `.gitignore` that keeps the Studio's regenerated files — `poms/`,
+`.metadata/`, logs — out of the repository).
 
 Notes:
 

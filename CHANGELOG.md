@@ -25,6 +25,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   `tos_custom_libs` volume (`/custom-libs`), installed into the Studio m2
   with the Studio's jar→Maven mapping and consulted before any remote
   download.
+- Git guide for Talend projects (`docs/TALEND-PROJECT-GIT.md`) and a
+  ready-made `.gitignore` (`examples/talend-project/`) excluding everything
+  the Studio regenerates (`poms/`, `.Java/`, `.JETEmitters/`, `.metadata/`,
+  Eclipse descriptors, logs, `temp/`).
 
 ## [0.1.0] - 2026-06-10
 
