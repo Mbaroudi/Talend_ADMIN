@@ -203,7 +203,8 @@ Planned / open for contribution (see the
 - [ ] Job log shipping to MinIO (`talend-logs` bucket)
 - [ ] Optional LDAP authentication for Rundeck
 - [ ] Helm chart for Kubernetes deployments
-- [ ] Example Talend job repository (buildable end-to-end demo)
+- [x] Example Talend job repository (buildable end-to-end demo) —
+      [`examples/talend-project/demo/`](examples/talend-project/demo/README.md)
 - [ ] Bitbucket webhook support
 
 ## Contributing & community

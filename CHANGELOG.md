@@ -30,6 +30,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the Studio regenerates (`poms/`, `.Java/`, `.JETEmitters/`, `.metadata/`,
   Eclipse descriptors, logs, `temp/`).
 
+- Working demo project (`examples/talend-project/demo/`): project `DEMO`
+  with a single-tJava `HelloWorld` job (contexts `Default`/`Production`,
+  `greeting` context parameter). Validated end-to-end: signed push webhook →
+  Rundeck → TOS build from raw sources → SSH run, plus `CONTEXT` switching
+  and `CONTEXT_PARAMS` overrides — all executions SUCCEEDED.
+
 ### Fixed
 
 Found by running the full push→build→deploy chain end-to-end (webhook →
@@ -50,6 +56,9 @@ Rundeck → TOS build → SSH run):
   `/usr/local/bin`.
 - Artifacts written by the builders (root) were not writable by the runner's
   SSH user; both builders now `chmod -R a+rwX` the artifact tree.
+- Accented characters in context parameters and job output were mangled:
+  SSH sessions had no UTF-8 locale and the job JVM no `-Dfile.encoding`;
+  `run-talend-job` now forces `C.UTF-8` + `-Dfile.encoding=UTF-8`.
 
 ## [0.1.0] - 2026-06-10
 

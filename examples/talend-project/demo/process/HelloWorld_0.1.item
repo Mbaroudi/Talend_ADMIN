@@ -1,0 +1,134 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<talendfile:ProcessType xmi:version="2.0" xmlns:xmi="http://www.omg.org/XMI" xmlns:talendfile="platform:/resource/org.talend.model/model/TalendFile.xsd" defaultContext="Default" jobType="Standard">
+  <context confirmationNeeded="false" name="Default">
+    <contextParameter comment="" name="greeting" prompt="greeting?" promptNeeded="false" type="id_String" value="Hello from Talend_ADMIN!"/>
+  </context>
+  <context confirmationNeeded="false" name="Production">
+    <contextParameter comment="" name="greeting" prompt="greeting?" promptNeeded="false" type="id_String" value="Hello from Talend_ADMIN (Production)!"/>
+  </context>
+  <parameters>
+    <elementParameter field="TEXT" name="SCREEN_OFFSET_X" value="0"/>
+    <elementParameter field="TEXT" name="SCREEN_OFFSET_Y" value="64"/>
+    <elementParameter field="TEXT" name="REPOSITORY_CONNECTION_ID" value=""/>
+    <elementParameter field="CHECK" name="IMPLICITCONTEXT_USE_PROJECT_SETTINGS" value="true"/>
+    <elementParameter field="CHECK" name="STATANDLOG_USE_PROJECT_SETTINGS" value="true"/>
+    <elementParameter field="CHECK" name="MULTI_THREAD_EXECATION" value="false"/>
+    <elementParameter field="TEXT" name="PARALLELIZE_UNIT_SIZE" value="25000"/>
+    <elementParameter field="CHECK" name="IMPLICIT_TCONTEXTLOAD" value="false"/>
+    <elementParameter field="RADIO" name="FROM_FILE_FLAG_IMPLICIT_CONTEXT" value="false"/>
+    <elementParameter field="RADIO" name="FROM_DATABASE_FLAG_IMPLICIT_CONTEXT" value="false"/>
+    <elementParameter field="FILE" name="IMPLICIT_TCONTEXTLOAD_FILE" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="FIELDSEPARATOR" value="&quot;&quot;"/>
+    <elementParameter field="TECHNICAL" name="PROPERTY_TYPE_IMPLICIT_CONTEXT:PROPERTY_TYPE" value=""/>
+    <elementParameter field="TECHNICAL" name="PROPERTY_TYPE_IMPLICIT_CONTEXT:REPOSITORY_PROPERTY_TYPE" value=""/>
+    <elementParameter field="CLOSED_LIST" name="DB_TYPE_IMPLICIT_CONTEXT" value=""/>
+    <elementParameter field="CLOSED_LIST" name="DB_VERSION_IMPLICIT_CONTEXT" value=""/>
+    <elementParameter field="TEXT" name="URL_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TABLE" name="DRIVER_JAR_IMPLICIT_CONTEXT"/>
+    <elementParameter field="TEXT" name="DRIVER_CLASS_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="HOST_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="PORT_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="DBNAME_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="LOCAL_SERVICE_NAME_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="PROPERTIES_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="SCHEMA_DB_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="USER_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="PASSWORD" name="PASS_IMPLICIT_CONTEXT" value="0RMsyjmybrE="/>
+    <elementParameter field="FILE" name="DBFILE_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="DBTABLE" name="DBTABLE_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="QUERY_CONDITION_IMPLICIT_CONTEXT" value="&quot;&quot;"/>
+    <elementParameter field="CLOSED_LIST" name="LOAD_NEW_VARIABLE" value=""/>
+    <elementParameter field="CLOSED_LIST" name="NOT_LOAD_OLD_VARIABLE" value=""/>
+    <elementParameter field="CHECK" name="PRINT_OPERATIONS" value="false"/>
+    <elementParameter field="CHECK" name="DISABLE_ERROR" value="false"/>
+    <elementParameter field="CHECK" name="DISABLE_WARNINGS" value="false"/>
+    <elementParameter field="CHECK" name="DISABLE_INFO" value="false"/>
+    <elementParameter field="CHECK" name="ON_STATCATCHER_FLAG" value="false"/>
+    <elementParameter field="CHECK" name="ON_LOGCATCHER_FLAG" value="false"/>
+    <elementParameter field="CHECK" name="ON_METERCATCHER_FLAG" value="false"/>
+    <elementParameter field="CHECK" name="ON_CONSOLE_FLAG" value="false"/>
+    <elementParameter field="CHECK" name="ON_FILES_FLAG" value="false"/>
+    <elementParameter field="DIRECTORY" name="FILE_PATH" value="&quot;/home/bchen/.yoxoslauncher/instances/162bff69b48b2bd043c389d49404402b/workspace/.metadata&quot;"/>
+    <elementParameter field="TEXT" name="FILENAME_STATS" value="&quot;stats_file.txt&quot;"/>
+    <elementParameter field="TEXT" name="FILENAME_LOGS" value="&quot;logs_file.txt&quot;"/>
+    <elementParameter field="TEXT" name="FILENAME_METTER" value="&quot;meter_file.txt&quot;"/>
+    <elementParameter field="ENCODING_TYPE" name="ENCODING" value="ISO-8859-15"/>
+    <elementParameter field="TECHNICAL" name="ENCODING:ENCODING_TYPE" value="ISO-8859-15"/>
+    <elementParameter field="CHECK" name="ON_DATABASE_FLAG" value="false"/>
+    <elementParameter field="CLOSED_LIST" name="DB_TYPE" value="tJDBCOutput"/>
+    <elementParameter field="CLOSED_LIST" name="DB_VERSION" value="ORACLE_11"/>
+    <elementParameter field="TEXT" name="URL" value="&quot;&quot;"/>
+    <elementParameter field="TABLE" name="DRIVER_JAR"/>
+    <elementParameter field="TEXT" name="DRIVER_CLASS" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="HOST" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="PORT" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="DATASOURCE" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="DBNAME" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="LOCAL_SERVICE_NAME" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="PROPERTIES" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="SCHEMA_DB" value="&quot;&quot;"/>
+    <elementParameter field="TEXT" name="USER" value="&quot;&quot;"/>
+    <elementParameter field="PASSWORD" name="PASS" value="0RMsyjmybrE="/>
+    <elementParameter field="FILE" name="DBFILE" value="&quot;&quot;"/>
+    <elementParameter field="DBTABLE" name="TABLE_STATS" value="&quot;&quot;"/>
+    <elementParameter field="DBTABLE" name="TABLE_LOGS" value="&quot;&quot;"/>
+    <elementParameter field="DBTABLE" name="TABLE_METER" value="&quot;&quot;"/>
+    <elementParameter field="CHECK" name="CATCH_RUNTIME_ERRORS" value="true"/>
+    <elementParameter field="CHECK" name="CATCH_USER_ERRORS" value="true"/>
+    <elementParameter field="CHECK" name="CATCH_USER_WARNING" value="true"/>
+    <elementParameter field="CHECK" name="CATCH_REALTIME_STATS" value="false"/>
+    <elementParameter field="TEXT" name="HEADERFOOTER_HEADERID" value=""/>
+    <elementParameter field="CHECK" name="HEADER_ENABLED" value="false"/>
+    <elementParameter field="TEXT" name="HEADER_LIBRARY" value=""/>
+    <elementParameter field="TEXT" name="HEADER_CODE" value=""/>
+    <elementParameter field="TEXT" name="HEADER_IMPORT" value=""/>
+    <elementParameter field="TEXT" name="HEADERFOOTER_FOOTERID" value=""/>
+    <elementParameter field="CHECK" name="FOOTER_ENABLED" value="false"/>
+    <elementParameter field="TEXT" name="FOOTER_LIBRARY" value=""/>
+    <elementParameter field="TEXT" name="FOOTER_CODE" value=""/>
+    <elementParameter field="TEXT" name="FOOTER_IMPORT" value=""/>
+    <routinesParameter id="_ak2W0JLmEeO5vIM_4wQBSA" name="DQTechnical"/>
+    <routinesParameter id="_aki00JLmEeO5vIM_4wQBSA" name="DataOperation"/>
+    <routinesParameter id="_akzTgJLmEeO5vIM_4wQBSA" name="DataQuality"/>
+    <routinesParameter id="_ak1IsJLmEeO5vIM_4wQBSA" name="DqStringHandling"/>
+    <routinesParameter id="_aklREJLmEeO5vIM_4wQBSA" name="Mathematical"/>
+    <routinesParameter id="_aknGQJLmEeO5vIM_4wQBSA" name="Numeric"/>
+    <routinesParameter id="_akpigJLmEeO5vIM_4wQBSA" name="Relational"/>
+    <routinesParameter id="_aiat4JLmEeO5vIM_4wQBSA" name="SQLike"/>
+    <routinesParameter id="_akrXsJLmEeO5vIM_4wQBSA" name="StringHandling"/>
+    <routinesParameter id="_aktM4JLmEeO5vIM_4wQBSA" name="TalendDataGenerator"/>
+    <routinesParameter id="_akvCEJLmEeO5vIM_4wQBSA" name="TalendDate"/>
+    <routinesParameter id="_akw3QJLmEeO5vIM_4wQBSA" name="TalendString"/>
+    <routinesParameter id="_fPdxsMZmEeCOupYqocd8jw" name="Alignment"/>
+    <routinesParameter id="_3aAYMMZoEeCOupYqocd8jw" name="BestScore"/>
+    <routinesParameter id="_LKCpoMZoEeCOupYqocd8jw" name="Cell"/>
+    <routinesParameter id="_SCbTMMZnEeCOupYqocd8jw" name="Commons"/>
+    <routinesParameter id="_E8UjIMZoEeCOupYqocd8jw" name="Directions"/>
+    <routinesParameter id="_YbRPIMZoEeCOupYqocd8jw" name="Markups"/>
+    <routinesParameter id="_POIloMZyEeCOupYqocd8jw" name="MatricesCompartor"/>
+    <routinesParameter id="_Auo2MMZyEeCOupYqocd8jw" name="MatrixLoaderException"/>
+    <routinesParameter id="_RJ52IMZvEeCOupYqocd8jw" name="MatrixLoader"/>
+    <routinesParameter id="_iDfjEMZnEeCOupYqocd8jw" name="Matrix"/>
+    <routinesParameter id="_ktzosMZxEeCOupYqocd8jw" name="NamedInputStream"/>
+    <routinesParameter id="_GHBRIMZnEeCOupYqocd8jw" name="Sequence"/>
+    <routinesParameter id="_VBUZIMZaEeCOupYqocd8jw" name="SmithWatermanGotoh"/>
+    <routinesParameter id="_QBbIwAjYEeOPn4libonzQw" name="BooleanUtil"/>
+    <routinesParameter id="_ya5ZYCA8EeOdQrA80aTU7g" name="FileUtil"/>
+    <routinesParameter id="_fTgLsAjYEeOPn4libonzQw" name="GlobalMapUtil"/>
+    <routinesParameter id="_02jO8ANdEeOU6rA5Is42rg" name="NumberUtil"/>
+    <routinesParameter id="_5uBPkAPeEeO7n5BlxAt0_A" name="PasswordUtil"/>
+    <routinesParameter id="_YLwQkNjuEeKi8eVeWMP6TQ" name="ResultSetUtil"/>
+    <routinesParameter id="_f5ROoANbEeOU6rA5Is42rg" name="StringUtil"/>
+    <routinesParameter id="_odGNcAjYEeOPn4libonzQw" name="SystemEnvironmentUtil"/>
+    <routinesParameter id="_XU-FQCGhEeK0wIzNz3CjTA" name="TeradataUtil"/>
+    <routinesParameter id="_zKVMMAjYEeOPn4libonzQw" name="TimestampUtil"/>
+    <routinesParameter id="_RngUwAQBEeOgEIYmnu9NEQ" name="constant"/>
+  </parameters>
+  <node componentName="tJava" componentVersion="0.101" offsetLabelX="0" offsetLabelY="0" posX="160" posY="96">
+    <elementParameter field="TEXT" name="UNIQUE_NAME" value="tJava_1"/>
+    <elementParameter field="MEMO_JAVA" name="CODE" value="System.out.println(&quot;==============================================&quot;);&#xA;System.out.println(context.greeting);&#xA;System.out.println(&quot;Job HelloWorld executed successfully via Talend_ADMIN&quot;);&#xA;System.out.println(&quot;==============================================&quot;);"/>
+    <elementParameter field="MEMO_IMPORT" name="IMPORT" value=""/>
+    <elementParameter field="TEXT" name="CONNECTION_FORMAT" value="row"/>
+    <metadata connector="FLOW" name="tJava_1"/>
+  </node>
+</talendfile:ProcessType>

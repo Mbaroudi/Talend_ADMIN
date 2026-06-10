@@ -55,9 +55,10 @@ fi
 echo "[run-talend-job] job=${JOB} context=${CTX} jvm_opts='${TALEND_JVM_OPTS:-}' args: ${ARGS[*]}"
 
 # --- launch -------------------------------------------------------------------
-if [ -n "${TALEND_JVM_OPTS:-}" ]; then
-  export JAVA_TOOL_OPTIONS="${TALEND_JVM_OPTS}"
-fi
+# SSH sessions come without a UTF-8 locale; force one so accented context
+# params and job output survive intact.
+export LANG="${LANG:-C.UTF-8}" LC_ALL="${LC_ALL:-C.UTF-8}"
+export JAVA_TOOL_OPTIONS="${TALEND_JVM_OPTS:+${TALEND_JVM_OPTS} }-Dfile.encoding=UTF-8"
 
 # The launcher may sit directly in BASE or one level down (Talend zips often
 # wrap it as <JOB>/<JOB>_run.sh next to a top-level lib/ + jobInfo.properties).

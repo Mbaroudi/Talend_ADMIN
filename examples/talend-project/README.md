@@ -32,3 +32,10 @@ copy it to the root of your Talend repository.
 
 Full guide (workspace setup, commit hygiene, webhook triggering):
 [`docs/TALEND-PROJECT-GIT.md`](../../docs/TALEND-PROJECT-GIT.md).
+
+## Working demo
+
+[`demo/`](demo/README.md) contains a complete, buildable example: project
+`DEMO` with a single-tJava **HelloWorld** job (two contexts, one context
+parameter) — the project used to validate the whole push → build → run chain
+end-to-end.
