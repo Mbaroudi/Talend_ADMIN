@@ -1,0 +1,30 @@
+# Secrets / local config
+.env
+*.local
+
+# SSH keys (generated at runtime into the shared volume)
+*.pem
+*.key
+id_rsa*
+
+# Build artifacts / runtime data
+artifacts/
+**/target/
+*.jar
+*.zip
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Logs
+*.log
+logs/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/

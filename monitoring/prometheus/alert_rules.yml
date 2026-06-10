@@ -1,0 +1,29 @@
+groups:
+  - name: talend-admin
+    rules:
+      - alert: TargetDown
+        expr: up == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Target {{ $labels.job }} is down"
+          description: "{{ $labels.instance }} ({{ $labels.job }}) has been unreachable for 2 minutes."
+
+      - alert: TalendBuildFailures
+        expr: increase(talend_builds_total{status="failed"}[15m]) > 0
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Talend build failures detected"
+          description: "{{ $value }} failed Talend build(s) in the last 15 minutes."
+
+      - alert: HighNodeCPU
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on {{ $labels.instance }}"
+          description: "CPU usage above 90% for 5 minutes."

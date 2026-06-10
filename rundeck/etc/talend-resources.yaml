@@ -1,0 +1,14 @@
+# Rundeck node inventory for the "talend" project.
+# The talend-runner container is the execution node Rundeck dispatches Talend
+# job runs to over SSH (key auth, key auto-generated into the shared volume).
+talend-runner:
+  nodename: talend-runner
+  hostname: talend-runner
+  description: Talend job execution node (JRE + compiled job artifacts)
+  osFamily: unix
+  osName: Linux
+  osArch: amd64
+  username: talend
+  ssh-keypath: /keys/id_rsa
+  ssh-authentication: privateKey
+  tags: talend,runner,jre

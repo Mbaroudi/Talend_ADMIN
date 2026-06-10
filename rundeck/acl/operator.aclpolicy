@@ -1,0 +1,27 @@
+# Example project ACL: the `operator` role may read and run jobs in the
+# `talend` project, but not create/delete/modify them. Applied by the
+# bootstrap job. The `admin` role keeps full access via the image default ACL.
+description: Operator - read and run Talend jobs
+context:
+  project: 'talend'
+for:
+  job:
+    - allow: [read, run, kill]
+  node:
+    - allow: [read, run]
+  adhoc:
+    - deny: [run]
+by:
+  group: operator
+
+---
+description: Operator - read-only project access
+context:
+  application: 'rundeck'
+for:
+  project:
+    - match:
+        name: 'talend'
+      allow: [read]
+by:
+  group: operator

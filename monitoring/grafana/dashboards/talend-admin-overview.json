@@ -1,0 +1,47 @@
+{
+  "annotations": { "list": [] },
+  "editable": true,
+  "schemaVersion": 39,
+  "title": "Talend_ADMIN Overview",
+  "tags": ["talend", "rundeck", "ci-cd"],
+  "time": { "from": "now-6h", "to": "now" },
+  "timezone": "",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Service availability (up)",
+      "type": "stat",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 6, "w": 12, "x": 0, "y": 0 },
+      "options": { "reduceOptions": { "calcs": ["lastNotNull"] }, "colorMode": "background" },
+      "targets": [ { "expr": "up", "legendFormat": "{{job}}", "refId": "A" } ]
+    },
+    {
+      "id": 2,
+      "title": "Talend builds (total by status)",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 6, "w": 12, "x": 12, "y": 0 },
+      "targets": [ { "expr": "sum by (status) (talend_builds_total)", "legendFormat": "{{status}}", "refId": "A" } ]
+    },
+    {
+      "id": 3,
+      "title": "Webhook requests rate",
+      "type": "timeseries",
+      "datasource": { "type": "prometheus", "uid": "${DS_PROMETHEUS}" },
+      "gridPos": { "h": 7, "w": 24, "x": 0, "y": 6 },
+      "targets": [ { "expr": "sum by (provider, status) (rate(tac_webhook_requests_total[5m]))", "legendFormat": "{{provider}} {{status}}", "refId": "A" } ]
+    }
+  ],
+  "templating": {
+    "list": [
+      {
+        "name": "DS_PROMETHEUS",
+        "type": "datasource",
+        "query": "prometheus",
+        "current": { "text": "Prometheus", "value": "Prometheus" },
+        "hide": 0
+      }
+    ]
+  }
+}

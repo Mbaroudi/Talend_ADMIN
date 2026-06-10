@@ -1,0 +1,40 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+rule_files:
+  - "alert_rules.yml"
+
+alerting:
+  alertmanagers:
+    - static_configs:
+        - targets: ["alertmanager:9093"]
+
+scrape_configs:
+  - job_name: "prometheus"
+    static_configs:
+      - targets: ["localhost:9090"]
+
+  - job_name: "node-exporter"
+    static_configs:
+      - targets: ["node-exporter:9100"]
+
+  - job_name: "talend-builder"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["talend-builder:8080"]
+
+  - job_name: "webhook-handler"
+    metrics_path: /metrics
+    static_configs:
+      - targets: ["webhook-handler:8080"]
+
+  # Optional integrations (enable after configuring the target):
+  # - job_name: "minio"
+  #   metrics_path: /minio/v2/metrics/cluster
+  #   static_configs:
+  #     - targets: ["minio:9000"]
+  # - job_name: "nexus"
+  #   metrics_path: /service/metrics/prometheus
+  #   static_configs:
+  #     - targets: ["nexus:8081"]

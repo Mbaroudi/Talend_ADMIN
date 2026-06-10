@@ -1,0 +1,25 @@
+route:
+  group_by: ["alertname"]
+  group_wait: 10s
+  group_interval: 30s
+  repeat_interval: 1h
+  receiver: default
+
+receivers:
+  - name: default
+    # No notifier configured by default. Add one and reference it above.
+    # Example (Slack):
+    # slack_configs:
+    #   - api_url: "https://hooks.slack.com/services/XXX/YYY/ZZZ"
+    #     channel: "#talend-alerts"
+    #     send_resolved: true
+    # Example (email):
+    # email_configs:
+    #   - to: "ops@example.com"
+    #     from: "alertmanager@example.com"
+    #     smarthost: "smtp.example.com:587"
+
+inhibit_rules:
+  - source_matchers: ['severity = "critical"']
+    target_matchers: ['severity = "warning"']
+    equal: ["alertname", "instance"]

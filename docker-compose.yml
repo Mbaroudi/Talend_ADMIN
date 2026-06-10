@@ -1,0 +1,270 @@
+# =============================================================================
+# Talend_ADMIN — open-source Talend administration & orchestration platform.
+# Full Docker stack. Orchestration is handled by Rundeck (not Airflow).
+#
+#   cp .env.example .env   # then edit secrets
+#   docker compose up -d
+# =============================================================================
+
+name: talend-admin
+
+x-restart: &restart unless-stopped
+
+services:
+
+  # ---------------------------------------------------------------------------
+  # PostgreSQL — metadata store for the TAC platform AND Rundeck.
+  # The init script creates a second database for Rundeck.
+  # ---------------------------------------------------------------------------
+  postgres:
+    image: postgres:15-alpine
+    restart: *restart
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+      RUNDECK_DB_NAME: ${RUNDECK_DB_NAME}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./storage/postgres-init.sh:/docker-entrypoint-initdb.d/10-create-rundeck-db.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [tac-net]
+
+  # ---------------------------------------------------------------------------
+  # MinIO — S3-compatible object storage for Talend job artifacts & logs.
+  # ---------------------------------------------------------------------------
+  minio:
+    image: minio/minio:latest
+    restart: *restart
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    ports:
+      - "9000:9000"   # S3 API
+      - "9001:9001"   # Console
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks: [tac-net]
+
+  # One-shot: create the artifact buckets after MinIO is up.
+  minio-init:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_JOBS: ${MINIO_BUCKET_JOBS}
+      MINIO_BUCKET_LOGS: ${MINIO_BUCKET_LOGS}
+    entrypoint: ["/bin/sh", "/init/minio-init.sh"]
+    volumes:
+      - ./storage/minio-init.sh:/init/minio-init.sh:ro
+    networks: [tac-net]
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Nexus — Maven/raw artifact repository for compiled Talend jobs.
+  # ---------------------------------------------------------------------------
+  nexus:
+    image: sonatype/nexus3:3.67.0
+    restart: *restart
+    ports:
+      - "8081:8081"
+    volumes:
+      - nexus_data:/nexus-data
+    networks: [tac-net]
+
+  # ---------------------------------------------------------------------------
+  # Rundeck — the orchestrator (scheduling, runbooks, RBAC, API). Replaces TAC.
+  # ---------------------------------------------------------------------------
+  rundeck:
+    image: rundeck/rundeck:5.5.0
+    restart: *restart
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      RUNDECK_GRAILS_URL: ${RUNDECK_GRAILS_URL}
+      RUNDECK_SERVER_FORWARDED: "true"
+      RUNDECK_DATABASE_DRIVER: org.postgresql.Driver
+      RUNDECK_DATABASE_URL: jdbc:postgresql://postgres:5432/${RUNDECK_DB_NAME}?autoReconnect=true&useSSL=false
+      RUNDECK_DATABASE_USERNAME: ${POSTGRES_USER}
+      RUNDECK_DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      RUNDECK_API_TOKENS_DURATION_MAX: "0"
+    ports:
+      - "4440:4440"
+    volumes:
+      - rundeck_data:/home/rundeck/server/data
+      - ./rundeck/etc/realm.properties:/home/rundeck/server/config/realm.properties:ro
+      - ./rundeck/etc/talend-resources.yaml:/home/rundeck/server/config/talend-resources.yaml:ro
+      - ssh_keys:/keys:ro
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:4440/ || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+    networks: [tac-net]
+
+  # One-shot: provision the Talend project, runner node and job templates.
+  rundeck-bootstrap:
+    build: ./rundeck
+    depends_on:
+      rundeck:
+        condition: service_healthy
+    environment:
+      RUNDECK_URL: http://rundeck:4440
+      RUNDECK_ADMIN_USER: ${RUNDECK_ADMIN_USER}
+      RUNDECK_ADMIN_PASSWORD: ${RUNDECK_ADMIN_PASSWORD}
+      TALEND_RUNNER_USER: ${TALEND_RUNNER_USER}
+    networks: [tac-net]
+    restart: "no"
+
+  # ---------------------------------------------------------------------------
+  # Talend runner — execution node Rundeck dispatches to over SSH.
+  # Has a JRE and runs the compiled Talend job JARs from the shared volume.
+  # ---------------------------------------------------------------------------
+  talend-runner:
+    build: ./talend-runner
+    restart: *restart
+    environment:
+      TALEND_RUNNER_USER: ${TALEND_RUNNER_USER}
+    volumes:
+      - artifacts:/artifacts
+      - ssh_keys:/keys
+    networks: [tac-net]
+
+  # ---------------------------------------------------------------------------
+  # Talend builder — git clone -> Maven build -> JAR into the artifacts volume.
+  # Exposes a small HTTP build API on :8080.
+  # ---------------------------------------------------------------------------
+  talend-builder:
+    build: ./builder
+    restart: *restart
+    environment:
+      OUTPUT_DIR: /artifacts
+      MINIO_ENDPOINT: http://minio:9000
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_BUCKET_JOBS: ${MINIO_BUCKET_JOBS}
+    volumes:
+      - artifacts:/artifacts
+    networks: [tac-net]
+
+  # ---------------------------------------------------------------------------
+  # Webhook handler — Git push -> trigger build -> run the Rundeck job via API.
+  # ---------------------------------------------------------------------------
+  webhook-handler:
+    build: ./webhook-handler
+    restart: *restart
+    depends_on:
+      - rundeck
+      - talend-builder
+    environment:
+      WEBHOOK_SECRET: ${WEBHOOK_SECRET}
+      RUNDECK_URL: http://rundeck:4440
+      RUNDECK_ADMIN_USER: ${RUNDECK_ADMIN_USER}
+      RUNDECK_ADMIN_PASSWORD: ${RUNDECK_ADMIN_PASSWORD}
+      RUNDECK_PROJECT: ${RUNDECK_PROJECT}
+      RUNDECK_TRIGGER_JOB: ${RUNDECK_TRIGGER_JOB}
+      TALEND_BUILDER_URL: http://talend-builder:8080
+    ports:
+      - "8088:8080"
+    networks: [tac-net]
+
+  # ---------------------------------------------------------------------------
+  # TAC Platform — Flask portal unifying links to every service.
+  # ---------------------------------------------------------------------------
+  tac-platform:
+    build: ./platform
+    restart: *restart
+    environment:
+      TAC_PLATFORM_SECRET_KEY: ${TAC_PLATFORM_SECRET_KEY}
+      RUNDECK_PUBLIC_URL: ${RUNDECK_PUBLIC_URL}
+      MINIO_CONSOLE_PUBLIC_URL: ${MINIO_CONSOLE_PUBLIC_URL}
+      NEXUS_PUBLIC_URL: ${NEXUS_PUBLIC_URL}
+      GRAFANA_PUBLIC_URL: ${GRAFANA_PUBLIC_URL}
+      PROMETHEUS_PUBLIC_URL: ${PROMETHEUS_PUBLIC_URL}
+      RUNDECK_INTERNAL_URL: http://rundeck:4440
+    ports:
+      - "8089:8089"
+    networks: [tac-net]
+
+  # ---------------------------------------------------------------------------
+  # Monitoring — Prometheus + Grafana + Alertmanager + node-exporter.
+  # ---------------------------------------------------------------------------
+  prometheus:
+    image: prom/prometheus:v2.51.0
+    restart: *restart
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.retention.time=200h"
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/prometheus/alert_rules.yml:/etc/prometheus/alert_rules.yml:ro
+      - prometheus_data:/prometheus
+    networks: [tac-net]
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    restart: *restart
+    command:
+      - "--config.file=/etc/alertmanager/alertmanager.yml"
+    ports:
+      - "9093:9093"
+    volumes:
+      - ./monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    networks: [tac-net]
+
+  grafana:
+    image: grafana/grafana:10.4.2
+    restart: *restart
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    networks: [tac-net]
+
+  node-exporter:
+    image: prom/node-exporter:v1.7.0
+    restart: *restart
+    command:
+      - "--path.rootfs=/host"
+    pid: host
+    volumes:
+      - /:/host:ro,rslave
+    networks: [tac-net]
+
+volumes:
+  postgres_data:
+  minio_data:
+  nexus_data:
+  rundeck_data:
+  artifacts:
+  ssh_keys:
+  prometheus_data:
+  grafana_data:
+
+networks:
+  tac-net:
+    driver: bridge
