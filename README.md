@@ -1,5 +1,10 @@
 # Talend_ADMIN
 
+[![CI](https://github.com/Mbaroudi/Talend_ADMIN/actions/workflows/ci.yml/badge.svg)](https://github.com/Mbaroudi/Talend_ADMIN/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Docker Compose](https://img.shields.io/badge/docker-compose-2496ED?logo=docker&logoColor=white)](docker-compose.yml)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
 **An open-source alternative to Talend Administration Center (TAC).**
 Build, schedule, trigger and monitor Talend jobs — orchestrated by **Rundeck**,
 running entirely on **Docker** (no Kubernetes required).
@@ -8,6 +13,18 @@ running entirely on **Docker** (no Kubernetes required).
 > community-maintained project and is not affiliated with Talend.
 
 ---
+
+- [Why](#why)
+- [Architecture](#architecture)
+- [Quick start](#quick-start)
+- [Services & ports](#services--ports)
+- [Orchestrating Talend jobs](#orchestrating-talend-jobs)
+- [CI/CD from Git](#cicd-from-git)
+- [Configuration](#configuration)
+- [Security notes](#security-notes)
+- [Documentation](#documentation)
+- [Roadmap](#roadmap)
+- [Contributing & community](#contributing--community)
 
 ## Why
 
@@ -20,6 +37,16 @@ core job-administration role with proven open-source building blocks:
 - A **Git webhook handler** that turns a push into a build + run.
 - **MinIO** + **Nexus** for artifact storage, **PostgreSQL** for metadata,
   and a **Prometheus / Grafana / Alertmanager** monitoring stack.
+
+| TAC capability                | Talend_ADMIN equivalent                          |
+|-------------------------------|--------------------------------------------------|
+| Job Conductor (schedule, run) | Rundeck jobs + cron schedules                    |
+| Execution servers (JobServer) | SSH runner nodes, selected by tag                |
+| Execution contexts            | `CONTEXT` / `CONTEXT_PARAMS` job options         |
+| JVM parameters per execution  | `JVM_OPTS` job option                            |
+| Publish from Studio/CI        | Git push → webhook → Maven build → artifact      |
+| Monitoring & history          | Rundeck execution log + Prometheus/Grafana       |
+| Users / rights                | Rundeck RBAC (realm + ACL policies)              |
 
 ## Architecture
 
@@ -51,8 +78,11 @@ core job-administration role with proven open-source building blocks:
 
 The compiled artifact lands in a Docker volume shared by the builder and the
 runner, so a job built by the builder is immediately runnable by Rundeck.
+Details: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Quick start
+
+Prerequisites: Docker Engine 24+ (or Docker Desktop) with the Compose plugin.
 
 ```bash
 git clone https://github.com/Mbaroudi/Talend_ADMIN.git
@@ -127,9 +157,11 @@ branch, the handler triggers the **Build and Deploy Talend Job** in Rundeck.
 
 ## Configuration
 
-All configuration is via `.env` (see `.env.example` for the full list).
-No secrets are committed; the SSH key used between Rundeck and the runner is
-generated at runtime into a Docker volume.
+All configuration is via `.env` — see
+[`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) for the full variable
+reference and the per-service configuration files. No secrets are committed;
+the SSH key used between Rundeck and the runner is generated at runtime into a
+Docker volume.
 
 ## Security notes
 
@@ -138,12 +170,41 @@ generated at runtime into a Docker volume.
 - The Rundeck admin password lives in `rundeck/etc/realm.properties` (the source
   of truth Rundeck reads at boot) and must match `RUNDECK_ADMIN_PASSWORD`.
 - Put the stack behind a reverse proxy with TLS for anything beyond localhost.
+- To report a vulnerability, see [`SECURITY.md`](SECURITY.md).
 
 ## Documentation
 
-- [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) — components and data flow
-- [`docs/USAGE.md`](docs/USAGE.md) — running and building Talend jobs
-- [`CONTRIBUTING.md`](CONTRIBUTING.md) — how to contribute
+| Document | Contents |
+|----------|----------|
+| [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) | Components, execution model, SSH provisioning, networking |
+| [`docs/USAGE.md`](docs/USAGE.md) | Building & running jobs, contexts, JVM options, runner selection, scheduling, webhooks |
+| [`docs/CONFIGURATION.md`](docs/CONFIGURATION.md) | Every `.env` variable and configuration file explained |
+| [`docs/TROUBLESHOOTING.md`](docs/TROUBLESHOOTING.md) | Common problems and how to diagnose them |
+| [`examples/talend-jobs/`](examples/talend-jobs/README.md) | Expected Talend job repository layout |
+| [`CONTRIBUTING.md`](CONTRIBUTING.md) | Development setup, checks, pull requests |
+| [`CHANGELOG.md`](CHANGELOG.md) | Release history |
+
+## Roadmap
+
+Planned / open for contribution (see the
+[issues](https://github.com/Mbaroudi/Talend_ADMIN/issues)):
+
+- [ ] Rundeck job metrics exported to Prometheus (success rate, duration)
+- [ ] Job log shipping to MinIO (`talend-logs` bucket)
+- [ ] Optional LDAP authentication for Rundeck
+- [ ] Helm chart for Kubernetes deployments
+- [ ] Example Talend job repository (buildable end-to-end demo)
+- [ ] Bitbucket webhook support
+
+## Contributing & community
+
+Contributions are welcome — read [`CONTRIBUTING.md`](CONTRIBUTING.md) and the
+[`CODE_OF_CONDUCT.md`](CODE_OF_CONDUCT.md), then pick an issue or open one.
+
+- **Bugs / features** → [GitHub issues](https://github.com/Mbaroudi/Talend_ADMIN/issues)
+- **Questions / ideas** → [GitHub discussions](https://github.com/Mbaroudi/Talend_ADMIN/discussions)
+
+If this project is useful to you, a ⭐ helps others find it.
 
 ## License
 
