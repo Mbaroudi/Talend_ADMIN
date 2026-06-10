@@ -15,7 +15,8 @@ monitor, RBAC) — exactly what Rundeck does.
 | `rundeck`        | `rundeck/rundeck`        | Orchestrator: scheduling, runbooks, ACL, API, UI. |
 | `rundeck-bootstrap` | `./rundeck`           | One-shot: provisions the `talend` project, runner node, jobs, ACL. |
 | `talend-runner`  | `./talend-runner`        | SSH + JRE execution node Rundeck dispatches job runs to. |
-| `talend-builder` | `./builder`              | HTTP build API: git clone → Maven → artifact. |
+| `talend-builder` | `./builder`              | HTTP build API: git clone → Maven → artifact (repos holding a Maven project / Studio export). |
+| `tos-builder`    | `./tos-builder`          | HTTP build API: git clone → headless Talend Open Studio 8.0.1 code generation → artifact (repos holding **raw Studio sources**). Studio lives in the `tos_studio` volume (one-time ~830 MB download); libraries resolved on demand from Maven Central into the Studio m2. |
 | `webhook-handler`| `./webhook-handler`      | Git push → trigger the Rundeck build job via API. |
 | `tac-platform`   | `./platform`             | Flask portal with links and live service status. |
 | `prometheus`     | `prom/prometheus`        | Metrics + alert evaluation. |
@@ -27,8 +28,11 @@ monitor, RBAC) — exactly what Rundeck does.
 
 Rundeck does not run Talend jobs in its own container. Instead:
 
-1. The **builder** compiles a Talend job and writes the runnable artifact to the
-   shared `artifacts` volume (`/artifacts/<job>/`), optionally uploading to MinIO.
+1. A **builder** compiles a Talend job and writes the runnable artifact to the
+   shared `artifacts` volume (`/artifacts/<job>/`), optionally uploading to
+   MinIO. Two builders share the same HTTP contract — the `BUILDER` job option
+   picks one: `maven` (repo already buildable with Maven) or `tos` (raw Studio
+   sources; the headless Studio generates the Java code first).
 2. The **runner** mounts the same `artifacts` volume and exposes SSH.
 3. A **Rundeck job** targets the `talend-runner` node and runs
    `<job>_run.sh` (or `java -jar <job>.jar`) over SSH.

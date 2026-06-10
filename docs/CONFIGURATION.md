@@ -45,6 +45,13 @@ A few behaviours are configured through mounted files, listed at the end.
 The `*_PUBLIC_URL` variables are what a **browser** can reach (host ports or
 your reverse-proxy hostnames) — not the internal Docker service names.
 
+### TOS CI-builder (headless Studio)
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `TOS_DOWNLOAD_URL` | archive.org mirror of `TOS_DI-…-V8.0.1.zip` | Where the last open-source Talend Studio release is fetched from, once, into the `tos_studio` volume. Point it at an internal mirror for air-gapped setups. |
+| `TOS_BUILDER_HEAP` | `2048m` | JVM heap for headless code generation/build (`-Xmx`). |
+
 ### Webhook handler
 
 | Variable | Default | Description |
@@ -52,6 +59,7 @@ your reverse-proxy hostnames) — not the internal Docker service names.
 | `WEBHOOK_SECRET` | `change-me-webhook-secret` | Shared secret verifying webhook signatures (GitHub HMAC, GitLab token, Azure DevOps signature). |
 | `RUNDECK_PROJECT` | `talend` | Rundeck project containing the job to trigger. |
 | `RUNDECK_TRIGGER_JOB` | `Build and Deploy Talend Job` | Name of the Rundeck job triggered on push. |
+| `DEFAULT_BUILDER` | `maven` | Builder used for webhook-triggered builds: `maven` (Maven project/export in the repo) or `tos` (raw Studio sources). |
 
 ### Grafana
 
@@ -73,6 +81,7 @@ and consumed by the `run-talend-job` launcher on the runner:
 
 | Option | Maps to | Example |
 |--------|---------|---------|
+| `BUILDER` | which builder compiles the repo (build job only) | `maven`, `tos` |
 | `CONTEXT` | `--context=X` | `Production` |
 | `CONTEXT_PARAMS` | repeated `--context_param key=value` | `db_host=pg;batch_size=500` |
 | `JVM_OPTS` | JVM flags of the job process (rewrites the hardcoded `-Xms/-Xmx` of Talend `_run.sh` launchers) | `-Xms512M -Xmx4G` |

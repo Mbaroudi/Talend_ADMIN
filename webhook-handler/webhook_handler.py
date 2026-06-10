@@ -24,6 +24,8 @@ RUNDECK_ADMIN_USER = os.getenv("RUNDECK_ADMIN_USER", "admin")
 RUNDECK_ADMIN_PASSWORD = os.getenv("RUNDECK_ADMIN_PASSWORD", "admin")
 RUNDECK_PROJECT = os.getenv("RUNDECK_PROJECT", "talend")
 RUNDECK_TRIGGER_JOB = os.getenv("RUNDECK_TRIGGER_JOB", "Build and Deploy Talend Job")
+# maven = repo holds a Maven project / Studio export; tos = raw Studio sources
+DEFAULT_BUILDER = os.getenv("DEFAULT_BUILDER", "maven")
 
 ALLOWED_BRANCHES = {"main", "master", "develop"}
 BRANCH_PATTERNS = [r"^release/.*", r"^feature/.*", r"^hotfix/.*"]
@@ -178,6 +180,7 @@ def handle_push(provider, payload, event_type):
         "GIT_URL": repo["clone_url"],
         "GIT_BRANCH": repo["branch"],
         "JOB_NAME": repo["name"],  # convention: one job per repo; customize as needed
+        "BUILDER": DEFAULT_BUILDER,
     }
     try:
         result = rundeck.run_job(RUNDECK_TRIGGER_JOB, options)

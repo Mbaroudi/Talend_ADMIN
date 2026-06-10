@@ -6,6 +6,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
 
 ## [Unreleased]
 
+### Added
+
+- **TOS CI-builder**: build runnable Talend jobs from **raw Studio project
+  sources** (`talend.project` + `.item`) — the open-source equivalent of the
+  commercial Talend CI Builder. Talend never open-sourced its CommandLine
+  plugin, so the builder compiles its own small headless Eclipse application
+  (`org.talendadmin.cibuilder`) against the Studio's Apache-2.0 plugins at
+  provisioning time, then drives logon → code generation → build → zip
+  through a plain JVM: no GUI, no GTK/X11 libraries. The Studio 8.0.1
+  (~830 MB, last open-source release) is downloaded once into the
+  `tos_studio` volume; job libraries are resolved on demand from Maven
+  Central into the Studio m2 (cached in the same volume).
+- `BUILDER` option (`maven` | `tos`) on the **Build and Deploy Talend Job**
+  template, and `DEFAULT_BUILDER` env for webhook-triggered builds.
+
 ## [0.1.0] - 2026-06-10
 
 Initial public release.

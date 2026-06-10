@@ -179,6 +179,27 @@ services:
     networks: [tac-net]
 
   # ---------------------------------------------------------------------------
+  # TOS CI-builder — headless Talend Open Studio 8.0.1 (last open-source
+  # release). Builds runnable jobs from RAW Studio project sources
+  # (.item/.properties), i.e. full code generation without the GUI.
+  # The Studio (~830 MB) is downloaded ONCE at first start into the
+  # `tos_studio` volume; job libraries are resolved on demand from Maven
+  # Central into the Studio's m2 (also persisted in the volume).
+  # Same HTTP contract as talend-builder, on :8080.
+  # ---------------------------------------------------------------------------
+  tos-builder:
+    build: ./tos-builder
+    restart: *restart
+    environment:
+      TOS_DOWNLOAD_URL: ${TOS_DOWNLOAD_URL}
+      TOS_BUILDER_HEAP: ${TOS_BUILDER_HEAP}
+      OUTPUT_DIR: /artifacts
+    volumes:
+      - artifacts:/artifacts
+      - tos_studio:/opt/tos
+    networks: [tac-net]
+
+  # ---------------------------------------------------------------------------
   # Webhook handler — Git push -> trigger build -> run the Rundeck job via API.
   # ---------------------------------------------------------------------------
   webhook-handler:
@@ -194,6 +215,7 @@ services:
       RUNDECK_ADMIN_PASSWORD: ${RUNDECK_ADMIN_PASSWORD}
       RUNDECK_PROJECT: ${RUNDECK_PROJECT}
       RUNDECK_TRIGGER_JOB: ${RUNDECK_TRIGGER_JOB}
+      DEFAULT_BUILDER: ${DEFAULT_BUILDER}
       TALEND_BUILDER_URL: http://talend-builder:8080
     ports:
       - "8088:8080"
@@ -279,6 +301,7 @@ volumes:
   rundeck_data:
   artifacts:
   ssh_keys:
+  tos_studio:
   prometheus_data:
   grafana_data:
 

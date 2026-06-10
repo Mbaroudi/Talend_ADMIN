@@ -10,17 +10,54 @@ docker compose up -d --build
 Wait for `rundeck-bootstrap` to finish (`docker compose logs rundeck-bootstrap`).
 It creates the `talend` project, the runner node and the job templates.
 
-## 2. Expected Talend project layout
+## 2. Two builders, two repository layouts
 
-The builder compiles a **Maven-based Talend job export**. Your Git repository
-should contain a Maven project (a `pom.xml`) that produces either:
+Talend_ADMIN ships **two builders**; pick per build with the `BUILDER` option
+(default for webhook-triggered builds: `DEFAULT_BUILDER` in `.env`).
+
+### `BUILDER=tos` — raw Studio project sources (recommended)
+
+The **TOS CI-builder** is a headless Talend Open Studio 8.0.1 (last
+open-source release, Apache 2.0) driven entirely from the command line — the
+open-source equivalent of the commercial *Talend CI Builder*. It performs the
+full **code generation** (`.item` → Java) and packaging.
+
+Your Git repository simply contains what Studio stores in its workspace —
+the project folder, versioned as-is:
+
+```
+my-repo/
+├── talend.project          # project descriptor (name read from technicalLabel)
+├── process/                # jobs (.item + .properties)
+├── context/
+├── metadata/
+└── code/routines/
+```
+
+No export step, no pom.xml to maintain: push your project, the builder
+generates and packages the job.
+
+Notes:
+
+- The Studio (~830 MB) is downloaded **once** at first start into the
+  `tos_studio` Docker volume (`TOS_DOWNLOAD_URL`). The image itself stays
+  small, no GUI/X11 libraries are installed.
+- Job libraries are resolved **on demand**: when the code generator reports a
+  missing jar, the builder looks up its Maven coordinates in the Studio's own
+  index and fetches it from Maven Central (fallback: Talend's library mirror)
+  into the Studio m2, then retries. First build downloads what the job
+  actually needs; later builds reuse the cache (persisted in the volume).
+
+### `BUILDER=maven` — Maven project / Studio export
+
+The Maven builder compiles a repo that contains a `pom.xml` producing either:
 
 - a Talend *Build Job* `.zip` under `target/` containing
   `<Job>/<Job>_run.sh`, `lib/` and the job jar (preferred), or
 - a runnable `.jar` under `target/`.
 
-This is what Talend Studio's **Build Job → Maven** export produces, and what the
-Talend CI/Maven plugin generates in CI.
+This is what Talend Studio's **Build Job → Maven** export produces. Use it
+when you version build artifacts/exports rather than raw sources.
 
 ## 3. Build & run a job
 
@@ -31,6 +68,7 @@ Talend CI/Maven plugin generates in CI.
    - `GIT_URL` = your repo URL
    - `GIT_BRANCH` = `main`
    - `JOB_NAME` = the job to build/run
+   - `BUILDER` = `tos` (raw Studio sources) or `maven` (Maven project/export)
    - `CONTEXT` = `Default`
 
 The job clones, compiles via the builder, then executes the artifact on the
@@ -78,16 +116,24 @@ To add a second runner (e.g. a high-memory node targeted with
 `RUNNER_TAG=heavy`), uncomment the `talend-runner-xl` examples in
 `docker-compose.yml` and `talend-resources.yaml`, then restart Rundeck.
 
-## 4. Build via the builder API (without Rundeck)
+## 4. Build via the builder APIs (without Rundeck)
+
+Both builders expose the same API (`/build`, `/builds`, `/health`, `/metrics`):
 
 ```bash
+# Maven builder
 docker compose exec talend-builder \
   curl -s -X POST http://localhost:8080/build \
   -H 'Content-Type: application/json' \
   -d '{"git_url":"https://...","branch":"main","job_name":"MyJob"}'
-```
 
-Build history: `GET http://talend-builder:8080/builds` (in-cluster).
+# TOS CI-builder (raw Studio sources; first call may 503 while the one-time
+# Studio download is still running — check "studio_ready" on /health)
+docker compose exec tos-builder \
+  curl -s -X POST http://localhost:8080/build \
+  -H 'Content-Type: application/json' \
+  -d '{"git_url":"https://...","branch":"main","job_name":"MyJob"}'
+```
 
 ## 5. Schedule a job
 

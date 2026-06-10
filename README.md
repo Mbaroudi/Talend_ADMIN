@@ -44,9 +44,17 @@ core job-administration role with proven open-source building blocks:
 | Execution servers (JobServer) | SSH runner nodes, selected by tag                |
 | Execution contexts            | `CONTEXT` / `CONTEXT_PARAMS` job options         |
 | JVM parameters per execution  | `JVM_OPTS` job option                            |
-| Publish from Studio/CI        | Git push → webhook → Maven build → artifact      |
+| **CI Builder** (build from sources) | **TOS CI-builder**: headless Talend Open Studio 8.0.1, full code generation from raw `.item` sources, no GUI |
+| Publish from Studio/CI        | Git push → webhook → build → artifact            |
 | Monitoring & history          | Rundeck execution log + Prometheus/Grafana       |
 | Users / rights                | Rundeck RBAC (realm + ACL policies)              |
+
+The TOS CI-builder is the missing piece most "open-source TAC" attempts skip:
+it turns **raw Studio project sources** (what your team versions in Git) into
+runnable artifacts — code generation included — using the last open-source
+Studio release driven entirely from the command line. The Studio (~830 MB) is
+fetched once into a Docker volume; job libraries are resolved by Maven on
+demand. No license, no GUI, no manual export step.
 
 ## Architecture
 

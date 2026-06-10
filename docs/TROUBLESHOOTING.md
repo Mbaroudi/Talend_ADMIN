@@ -91,6 +91,42 @@ separated by `;`.
 
 ## Builds
 
+### TOS builder returns 503 "studio is still being provisioned"
+
+The first start downloads Talend Open Studio (~830 MB) into the `tos_studio`
+volume; until it finishes the build API refuses work. Follow the progress:
+
+```bash
+docker compose exec tos-builder cat /opt/tos/prepare.log
+curl -s http://localhost:8080/health   # inside the container: studio_ready
+```
+
+The download happens **once** — it survives container restarts (volume). If it
+failed (network), restarting the container resumes the download
+(`docker compose restart tos-builder`).
+
+### TOS build fails: "no talend.project found"
+
+`BUILDER=tos` expects **raw Studio project sources** (the `talend.project`
+file at the repo root or one level down). If your repo contains a Maven
+project or a Studio export, use `BUILDER=maven` instead.
+
+### TOS build fails during code generation
+
+```bash
+docker compose logs tos-builder
+```
+
+- "job not found": `JOB_NAME` must match the job name in `process/`
+  (case-sensitive, without version suffix).
+- Out of memory: raise `TOS_BUILDER_HEAP` in `.env` (e.g. `4096m`).
+- Missing libraries: resolved on demand from Maven Central into the Studio
+  m2 (look for `[on-demand]` lines in the build output) — the first build
+  needs network access; later builds use the cache. A
+  `WARN: no maven mapping` line means the jar is not in the Studio's index:
+  drop it manually under
+  `/opt/tos/studio/configuration/.m2/repository/<g>/<a>/<v>/`.
+
 ### Build fails in `talend-builder`
 
 ```bash

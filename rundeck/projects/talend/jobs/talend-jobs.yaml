@@ -93,6 +93,11 @@
     - name: JOB_NAME
       description: 'Talend job to build and run'
       required: true
+    - name: BUILDER
+      description: 'maven = Maven project / Studio export in the repo; tos = raw Studio sources (talend.project + .item), built by the headless TOS CI-builder'
+      value: maven
+      values: [maven, tos]
+      enforced: true
     - name: CONTEXT
       description: 'Talend context to run with (--context=X)'
       value: Default
@@ -120,8 +125,14 @@
         script: |
           #!/bin/bash
           set -euo pipefail
-          echo "[build] Requesting build of @option.JOB_NAME@ from @option.GIT_URL@ (@option.GIT_BRANCH@)"
-          curl -fsS -X POST "http://talend-builder:8080/build" \
+          case "@option.BUILDER@" in
+            tos) BUILDER_URL="http://tos-builder:8080" ;;
+            *)   BUILDER_URL="http://talend-builder:8080" ;;
+          esac
+          echo "[build] Requesting @option.BUILDER@ build of @option.JOB_NAME@ from @option.GIT_URL@ (@option.GIT_BRANCH@)"
+          # TOS builds include headless code generation and on-demand library
+          # resolution: allow up to 1h (Maven builds finish far sooner).
+          curl -fsS --max-time 3600 -X POST "${BUILDER_URL}/build" \
             -H 'Content-Type: application/json' \
             -d "{\"git_url\":\"@option.GIT_URL@\",\"branch\":\"@option.GIT_BRANCH@\",\"job_name\":\"@option.JOB_NAME@\"}"
           echo
