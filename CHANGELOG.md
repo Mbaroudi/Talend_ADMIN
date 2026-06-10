@@ -30,6 +30,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/).
   the Studio regenerates (`poms/`, `.Java/`, `.JETEmitters/`, `.metadata/`,
   Eclipse descriptors, logs, `temp/`).
 
+### Fixed
+
+Found by running the full push→build→deploy chain end-to-end (webhook →
+Rundeck → TOS build → SSH run):
+
+- Rundeck authentication followed the post-login redirect to
+  `RUNDECK_GRAILS_URL` (a public URL unreachable from inside containers) —
+  the bootstrap and the webhook handler now keep the session cookie from the
+  302 itself.
+- `run-talend-job` could not find launchers nested one level inside the
+  artifact (`<JOB>/<JOB>/<JOB>_run.sh`, the layout Talend zips produce).
+- The JVM-options patching wrote the patched launcher to `/tmp`, breaking
+  the relative classpath of Talend `_run.sh` scripts (`cd $(dirname $0)`);
+  it now runs the patched content in-place via `bash -c` with `$0` set to
+  the original script — no file written at all.
+- `java` was not on the PATH of Rundeck's SSH sessions on runner nodes
+  (Docker ENV is not inherited over SSH) — now symlinked into
+  `/usr/local/bin`.
+- Artifacts written by the builders (root) were not writable by the runner's
+  SSH user; both builders now `chmod -R a+rwX` the artifact tree.
+
 ## [0.1.0] - 2026-06-10
 
 Initial public release.

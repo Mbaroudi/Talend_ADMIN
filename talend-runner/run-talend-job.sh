@@ -14,7 +14,9 @@
 #   TALEND_JOB_ARGS        extra raw arguments appended verbatim
 #
 # Artifact lookup order under /artifacts:
-#   1. <JOB>/<JOB>_run.sh   (Talend "Build Job" export — preferred)
+#   1. <JOB>/<JOB>_run.sh or <JOB>/<JOB>/<JOB>_run.sh
+#      (Talend "Build Job" exports — the zip may nest the launcher one level
+#       below jobInfo.properties + lib/)
 #   2. <JOB>/<JOB>.jar      (runnable jar)
 #   3. <JOB>.jar            (flat jar)
 #
@@ -57,23 +59,33 @@ if [ -n "${TALEND_JVM_OPTS:-}" ]; then
   export JAVA_TOOL_OPTIONS="${TALEND_JVM_OPTS}"
 fi
 
-RUN_SCRIPT="${BASE}/${JOB}_run.sh"
-if [ -x "${RUN_SCRIPT}" ]; then
+# The launcher may sit directly in BASE or one level down (Talend zips often
+# wrap it as <JOB>/<JOB>_run.sh next to a top-level lib/ + jobInfo.properties).
+RUN_SCRIPT=""
+for candidate in "${BASE}/${JOB}_run.sh" "${BASE}/${JOB}/${JOB}_run.sh"; do
+  if [ -f "${candidate}" ]; then RUN_SCRIPT="${candidate}"; break; fi
+done
+if [ -z "${RUN_SCRIPT}" ]; then
+  RUN_SCRIPT="$(find "${BASE}" -maxdepth 2 -name '*_run.sh' 2>/dev/null | head -1 || true)"
+fi
+
+if [ -n "${RUN_SCRIPT}" ]; then
+  RUN_DIR="$(dirname "${RUN_SCRIPT}")"
+  chmod +x "${RUN_SCRIPT}" 2>/dev/null || true
   if [ -n "${TALEND_JVM_OPTS:-}" ]; then
     # Replace the hardcoded -X* flags of the Talend launcher with the
     # requested ones (command-line -Xmx wins over JAVA_TOOL_OPTIONS, so the
     # script defaults must be removed, not just overridden).
-    PATCHED="$(mktemp "/tmp/${JOB}_run.XXXXXX.sh")"
-    sed -E "s|^(java[[:space:]]+)(-X[^[:space:]]+[[:space:]]+)*|\1${TALEND_JVM_OPTS} |" \
-      "${RUN_SCRIPT}" > "${PATCHED}"
-    chmod +x "${PATCHED}"
-    cd "${BASE}"
-    rc=0
-    bash "${PATCHED}" "${ARGS[@]}" || rc=$?
-    rm -f "${PATCHED}"
-    exit "${rc}"
+    # Run the patched content via `bash -c` with $0 set to the ORIGINAL
+    # script path: Talend launchers do `cd $(dirname $0)` and use relative
+    # classpaths (.:../lib/*), and the artifact directory may be read-only
+    # for the SSH user, so no patched copy is written anywhere.
+    PATCHED_CONTENT="$(sed -E "s|^(java[[:space:]]+)(-X[^[:space:]]+[[:space:]]+)*|\1${TALEND_JVM_OPTS} |" \
+      "${RUN_SCRIPT}")"
+    cd "${RUN_DIR}"
+    exec bash -c "${PATCHED_CONTENT}" "${RUN_SCRIPT}" "${ARGS[@]}"
   fi
-  cd "${BASE}"
+  cd "${RUN_DIR}"
   exec "${RUN_SCRIPT}" "${ARGS[@]}"
 elif [ -f "${BASE}/${JOB}.jar" ]; then
   # shellcheck disable=SC2086

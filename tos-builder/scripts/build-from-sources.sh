@@ -186,5 +186,8 @@ else
 fi
 rm -rf "${TMP}"
 chmod +x "${DEST}"/*_run.sh "${DEST}"/**/*_run.sh 2>/dev/null || true
+# The runner executes jobs as an unprivileged SSH user, and Talend jobs may
+# write stats/logs next to their launcher: open up the artifact tree.
+chmod -R a+rwX "${DEST}" 2>/dev/null || true
 
 echo "=== Artifact ready: ${DEST} ==="

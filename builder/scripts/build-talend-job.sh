@@ -58,6 +58,10 @@ else
   fi
 fi
 
+# The runner executes jobs as an unprivileged SSH user, and Talend jobs may
+# write stats/logs next to their launcher: open up the artifact tree.
+chmod -R a+rwX "$DEST" 2>/dev/null || true
+
 # Optional: publish the artifact to MinIO.
 if [ -n "${MINIO_ENDPOINT:-}" ] && command -v mc >/dev/null 2>&1; then
   if mc alias set tac "$MINIO_ENDPOINT" "${MINIO_ROOT_USER:-}" "${MINIO_ROOT_PASSWORD:-}" >/dev/null 2>&1; then

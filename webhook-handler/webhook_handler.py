@@ -46,11 +46,14 @@ class RundeckClient:
     def _session(self):
         s = requests.Session()
         s.get(f"{self.base}/user/login", timeout=10)
+        # allow_redirects=False: the session cookie is set on the 302 itself;
+        # the redirect target is RUNDECK_GRAILS_URL (public URL, e.g.
+        # localhost:4440) which is not reachable from inside this container.
         s.post(
             f"{self.base}/j_security_check",
             data={"j_username": RUNDECK_ADMIN_USER, "j_password": RUNDECK_ADMIN_PASSWORD},
             timeout=10,
-            allow_redirects=True,
+            allow_redirects=False,
         )
         return s
 

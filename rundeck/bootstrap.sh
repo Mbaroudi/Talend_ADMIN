@@ -26,7 +26,10 @@ done
 
 log "Authenticating as ${RUNDECK_ADMIN_USER} ..."
 curl -sf -c "$COOKIE" -o /dev/null "${RUNDECK_URL}/user/login"
-curl -sf -c "$COOKIE" -b "$COOKIE" -L -o /dev/null \
+# No -L: the session cookie is set on the 302 response itself, and the
+# redirect target is RUNDECK_GRAILS_URL (the PUBLIC url, e.g. localhost:4440)
+# which is not reachable from inside this container.
+curl -sf -c "$COOKIE" -b "$COOKIE" -o /dev/null \
   --data-urlencode "j_username=${RUNDECK_ADMIN_USER}" \
   --data-urlencode "j_password=${RUNDECK_ADMIN_PASSWORD}" \
   "${RUNDECK_URL}/j_security_check"

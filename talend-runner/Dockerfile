@@ -10,6 +10,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 # Non-root execution user Rundeck connects as.
 RUN useradd -m -s /bin/bash talend
 
+# SSH sessions do not inherit the image ENV (PATH with JAVA_HOME/bin), so
+# expose the JVM on the default PATH for Rundeck-dispatched commands.
+RUN ln -s "${JAVA_HOME}/bin/java" /usr/local/bin/java
+
 # Key-only SSH.
 RUN printf 'PasswordAuthentication no\nPubkeyAuthentication yes\nPermitRootLogin no\n' \
         > /etc/ssh/sshd_config.d/talend.conf
