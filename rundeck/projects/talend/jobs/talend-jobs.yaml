@@ -1,36 +1,58 @@
 # Rundeck job definitions for the "talend" project.
 # Imported by the bootstrap job. Fixed UUIDs make re-import idempotent.
 #
-# Execution model: jobs run on the `talend-runner` node (over SSH). The runner
-# shares the `artifacts` volume with the builder, so a JAR compiled by the
-# builder is immediately runnable here.
+# Execution model: jobs dispatch over SSH to runner nodes selected by TAG
+# (option RUNNER_TAG -> node filter `tags: ${option.RUNNER_TAG}`). Every
+# runner node ships /usr/local/bin/run-talend-job, the unified launcher that
+# handles artifact lookup, --context, --context_param pairs and JVM options.
+# To add runners, see rundeck/etc/talend-resources.yaml.
+#
+# Common options:
+#   JOB_NAME        Talend job (folder/jar base name under /artifacts)
+#   CONTEXT         Talend context (--context=X), e.g. Default/Test/Production
+#   CONTEXT_PARAMS  key=value pairs (newline or ';' separated) -> --context_param
+#   JVM_OPTS        JVM flags (-Xms/-Xmx/GC/-D...) applied to the job JVM
+#   JOB_ARGS        extra raw arguments appended verbatim
+#   RUNNER_TAG      tag of the runner node(s) to dispatch to
 
 - uuid: 11111111-1111-4111-8111-1111111111a1
   name: Run Talend Job
   group: ''
   description: |
-    Execute a previously compiled Talend job on the runner node.
+    Execute a previously compiled Talend job on a runner node.
     The artifact is looked up under /artifacts/<JOB_NAME>/.
   loglevel: INFO
   executionEnabled: true
-  nodeFilterEditable: false
+  nodeFilterEditable: true
   nodefilters:
     dispatch:
       keepgoing: false
       rankOrder: ascending
       threadcount: '1'
-    filter: 'name: talend-runner'
+    filter: 'tags: ${option.RUNNER_TAG}'
   nodesSelectedByDefault: true
   options:
     - name: JOB_NAME
       description: 'Talend job name (folder/jar base name under /artifacts)'
       required: true
     - name: CONTEXT
-      description: 'Talend context to run with'
+      description: 'Talend context to run with (--context=X)'
       value: Default
-    - name: JOB_ARGS
-      description: 'Extra arguments passed to the job (e.g. --context_param key=value)'
+      values: [Default, Test, Production]
+      enforced: false
+    - name: CONTEXT_PARAMS
+      description: 'Context params as key=value pairs, separated by ";" or newlines (e.g. db_host=pg;batch_size=500)'
       value: ''
+    - name: JVM_OPTS
+      description: 'JVM options for the job (e.g. -Xms512M -Xmx4G -Duser.timezone=UTC)'
+      value: '-Xms256M -Xmx1024M'
+    - name: JOB_ARGS
+      description: 'Extra raw arguments appended to the command line'
+      value: ''
+    - name: RUNNER_TAG
+      description: 'Tag of the runner node(s) to execute on (see talend-resources.yaml)'
+      value: default
+      required: true
   sequence:
     keepgoing: false
     strategy: node-first
@@ -39,22 +61,11 @@
         script: |
           #!/bin/bash
           set -euo pipefail
-          JOB="@option.JOB_NAME@"
-          CTX="@option.CONTEXT@"
-          ARGS="@option.JOB_ARGS@"
-          BASE="/artifacts/${JOB}"
-          echo "[talend-runner] Running ${JOB} (context=${CTX})"
-          if [ -x "${BASE}/${JOB}_run.sh" ]; then
-            exec "${BASE}/${JOB}_run.sh" --context="${CTX}" ${ARGS}
-          elif [ -f "${BASE}/${JOB}.jar" ]; then
-            exec java -jar "${BASE}/${JOB}.jar" --context="${CTX}" ${ARGS}
-          elif [ -f "/artifacts/${JOB}.jar" ]; then
-            exec java -jar "/artifacts/${JOB}.jar" --context="${CTX}" ${ARGS}
-          else
-            echo "ERROR: no artifact for '${JOB}' under /artifacts" >&2
-            ls -la /artifacts >&2 || true
-            exit 2
-          fi
+          export TALEND_CONTEXT='@option.CONTEXT@'
+          export TALEND_CONTEXT_PARAMS='@option.CONTEXT_PARAMS@'
+          export TALEND_JVM_OPTS='@option.JVM_OPTS@'
+          export TALEND_JOB_ARGS='@option.JOB_ARGS@'
+          exec run-talend-job '@option.JOB_NAME@'
 
 - uuid: 22222222-2222-4222-8222-2222222222b2
   name: Build and Deploy Talend Job
@@ -64,13 +75,13 @@
     resulting artifact. Triggered manually or by the webhook handler on push.
   loglevel: INFO
   executionEnabled: true
-  nodeFilterEditable: false
+  nodeFilterEditable: true
   nodefilters:
     dispatch:
       keepgoing: false
       rankOrder: ascending
       threadcount: '1'
-    filter: 'name: talend-runner'
+    filter: 'tags: ${option.RUNNER_TAG}'
   nodesSelectedByDefault: true
   options:
     - name: GIT_URL
@@ -83,8 +94,20 @@
       description: 'Talend job to build and run'
       required: true
     - name: CONTEXT
-      description: 'Talend context to run with'
+      description: 'Talend context to run with (--context=X)'
       value: Default
+      values: [Default, Test, Production]
+      enforced: false
+    - name: CONTEXT_PARAMS
+      description: 'Context params as key=value pairs, separated by ";" or newlines'
+      value: ''
+    - name: JVM_OPTS
+      description: 'JVM options for the job run (e.g. -Xms512M -Xmx4G)'
+      value: '-Xms256M -Xmx1024M'
+    - name: RUNNER_TAG
+      description: 'Tag of the runner node(s) to execute on'
+      value: default
+      required: true
     - name: RUN_AFTER_BUILD
       description: 'Run the job after a successful build'
       value: 'true'
@@ -107,16 +130,10 @@
           #!/bin/bash
           set -euo pipefail
           [ "@option.RUN_AFTER_BUILD@" = "true" ] || { echo "RUN_AFTER_BUILD=false, skipping run"; exit 0; }
-          JOB="@option.JOB_NAME@"
-          BASE="/artifacts/${JOB}"
-          if [ -x "${BASE}/${JOB}_run.sh" ]; then
-            exec "${BASE}/${JOB}_run.sh" --context="@option.CONTEXT@"
-          elif [ -f "${BASE}/${JOB}.jar" ]; then
-            exec java -jar "${BASE}/${JOB}.jar" --context="@option.CONTEXT@"
-          else
-            echo "ERROR: build reported success but no artifact for '${JOB}'" >&2
-            exit 2
-          fi
+          export TALEND_CONTEXT='@option.CONTEXT@'
+          export TALEND_CONTEXT_PARAMS='@option.CONTEXT_PARAMS@'
+          export TALEND_JVM_OPTS='@option.JVM_OPTS@'
+          exec run-talend-job '@option.JOB_NAME@'
 
 - uuid: 33333333-3333-4333-8333-3333333333c3
   name: Scheduled Talend Pipeline
@@ -136,13 +153,13 @@
     weekday:
       day: '*'
     year: '*'
-  nodeFilterEditable: false
+  nodeFilterEditable: true
   nodefilters:
     dispatch:
       keepgoing: false
       rankOrder: ascending
       threadcount: '1'
-    filter: 'name: talend-runner'
+    filter: 'tags: ${option.RUNNER_TAG}'
   nodesSelectedByDefault: true
   options:
     - name: JOB_NAME
@@ -151,6 +168,16 @@
       required: true
     - name: CONTEXT
       value: Production
+    - name: CONTEXT_PARAMS
+      description: 'Context params as key=value pairs, separated by ";" or newlines'
+      value: ''
+    - name: JVM_OPTS
+      description: 'JVM options for the nightly run'
+      value: '-Xms256M -Xmx2048M'
+    - name: RUNNER_TAG
+      description: 'Tag of the runner node(s) to execute on'
+      value: default
+      required: true
   sequence:
     keepgoing: false
     strategy: node-first
@@ -159,14 +186,7 @@
         script: |
           #!/bin/bash
           set -euo pipefail
-          JOB="@option.JOB_NAME@"
-          BASE="/artifacts/${JOB}"
-          echo "[scheduled] Running ${JOB} (context=@option.CONTEXT@)"
-          if [ -x "${BASE}/${JOB}_run.sh" ]; then
-            exec "${BASE}/${JOB}_run.sh" --context="@option.CONTEXT@"
-          elif [ -f "${BASE}/${JOB}.jar" ]; then
-            exec java -jar "${BASE}/${JOB}.jar" --context="@option.CONTEXT@"
-          else
-            echo "ERROR: no artifact for '${JOB}' under /artifacts" >&2
-            exit 2
-          fi
+          export TALEND_CONTEXT='@option.CONTEXT@'
+          export TALEND_CONTEXT_PARAMS='@option.CONTEXT_PARAMS@'
+          export TALEND_JVM_OPTS='@option.JVM_OPTS@'
+          exec run-talend-job '@option.JOB_NAME@'

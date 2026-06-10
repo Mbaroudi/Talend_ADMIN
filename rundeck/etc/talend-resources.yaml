@@ -1,14 +1,43 @@
 # Rundeck node inventory for the "talend" project.
-# The talend-runner container is the execution node Rundeck dispatches Talend
-# job runs to over SSH (key auth, key auto-generated into the shared volume).
+#
+# Each node is a Talend execution runner Rundeck dispatches to over SSH
+# (key auth, key auto-generated into the shared `ssh_keys` volume).
+#
+# RUNNER SELECTION: jobs pick their runner with the RUNNER_TAG option, which
+# feeds the node filter `tags: ${option.RUNNER_TAG}`. Give each runner one or
+# more capability tags (default, heavy, gpu, dmz...) and pass that tag at run
+# time. Several nodes may share a tag — Rundeck then dispatches according to
+# the job's threadcount/rankOrder settings.
+#
+# TO ADD A RUNNER:
+#   1. Add a service in docker-compose.yml (see the commented talend-runner-xl
+#      example) — or any SSH-reachable host with a JRE and the artifacts mount.
+#   2. Declare it below with its own tags.
+#   3. `docker compose restart rundeck` (the file is mounted read-only).
+
 talend-runner:
   nodename: talend-runner
   hostname: talend-runner
-  description: Talend job execution node (JRE + compiled job artifacts)
+  description: Default Talend execution node (JRE + compiled job artifacts)
   osFamily: unix
   osName: Linux
   osArch: amd64
   username: talend
   ssh-keypath: /keys/id_rsa
   ssh-authentication: privateKey
-  tags: talend,runner,jre
+  tags: talend,runner,jre,default
+
+# Example second runner for memory-hungry jobs — uncomment together with the
+# matching service in docker-compose.yml, then run jobs with RUNNER_TAG=heavy.
+#
+# talend-runner-xl:
+#   nodename: talend-runner-xl
+#   hostname: talend-runner-xl
+#   description: High-memory Talend execution node
+#   osFamily: unix
+#   osName: Linux
+#   osArch: amd64
+#   username: talend
+#   ssh-keypath: /keys/id_rsa
+#   ssh-authentication: privateKey
+#   tags: talend,runner,jre,heavy

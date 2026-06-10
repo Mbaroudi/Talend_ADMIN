@@ -15,7 +15,8 @@ RUN printf 'PasswordAuthentication no\nPubkeyAuthentication yes\nPermitRootLogin
         > /etc/ssh/sshd_config.d/talend.conf
 
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
+COPY run-talend-job.sh /usr/local/bin/run-talend-job
+RUN chmod +x /entrypoint.sh /usr/local/bin/run-talend-job
 
 EXPOSE 22
 ENTRYPOINT ["/entrypoint.sh"]

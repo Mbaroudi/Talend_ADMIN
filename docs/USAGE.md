@@ -45,8 +45,38 @@ curl -u admin:$RUNDECK_ADMIN_PASSWORD \
 ```
 
 ### Run a pre-built job directly
-Use the **Run Talend Job** template with `JOB_NAME` (and optional `CONTEXT`,
-`JOB_ARGS`). It looks the artifact up under `/artifacts/<JOB_NAME>/`.
+Use the **Run Talend Job** template with `JOB_NAME`. It looks the artifact up
+under `/artifacts/<JOB_NAME>/`.
+
+## 3b. Execution options (context, params, JVM, runner)
+
+Every job template exposes the same execution options, handled on the runner
+by the unified `run-talend-job` launcher:
+
+| Option           | Effect                                                            | Example                          |
+|------------------|-------------------------------------------------------------------|----------------------------------|
+| `CONTEXT`        | Talend context (`--context=X`)                                    | `Production`                     |
+| `CONTEXT_PARAMS` | `key=value` pairs (separated by `;` or newlines), each passed as `--context_param` | `db_host=pg;batch_size=500`      |
+| `JVM_OPTS`       | JVM flags for the job process                                     | `-Xms512M -Xmx4G -Duser.timezone=UTC` |
+| `JOB_ARGS`       | Extra raw arguments appended verbatim                             | `--stat_port=8888`               |
+| `RUNNER_TAG`     | Which runner node(s) to dispatch to (Rundeck node filter by tag)  | `default`, `heavy`               |
+
+Notes:
+
+- **JVM options really apply** even with Talend "Build Job" exports: the
+  generated `<Job>_run.sh` hardcodes its own `-Xms/-Xmx`, so the launcher
+  rewrites those flags with your `JVM_OPTS` (and also exports
+  `JAVA_TOOL_OPTIONS` for nested JVMs).
+- **Values containing spaces** work in `CONTEXT_PARAMS` as long as pairs are
+  separated by `;` (e.g. `label=Hello World;env=prod`).
+
+### Choosing a runner
+
+Runners are SSH nodes declared in `rundeck/etc/talend-resources.yaml`, each
+with capability tags. Jobs select them with `RUNNER_TAG` (default: `default`).
+To add a second runner (e.g. a high-memory node targeted with
+`RUNNER_TAG=heavy`), uncomment the `talend-runner-xl` examples in
+`docker-compose.yml` and `talend-resources.yaml`, then restart Rundeck.
 
 ## 4. Build via the builder API (without Rundeck)
 

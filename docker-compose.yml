@@ -144,6 +144,23 @@ services:
       - ssh_keys:/keys
     networks: [tac-net]
 
+  # Additional runner example — a high-memory node targeted with
+  # RUNNER_TAG=heavy. Uncomment together with the `talend-runner-xl` node in
+  # rundeck/etc/talend-resources.yaml.
+  # talend-runner-xl:
+  #   build: ./talend-runner
+  #   restart: *restart
+  #   environment:
+  #     TALEND_RUNNER_USER: ${TALEND_RUNNER_USER}
+  #   volumes:
+  #     - artifacts:/artifacts
+  #     - ssh_keys:/keys
+  #   networks: [tac-net]
+  #   deploy:
+  #     resources:
+  #       limits:
+  #         memory: 8g
+
   # ---------------------------------------------------------------------------
   # Talend builder — git clone -> Maven build -> JAR into the artifacts volume.
   # Exposes a small HTTP build API on :8080.

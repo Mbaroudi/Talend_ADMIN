@@ -1,0 +1,52 @@
+name: Bug report
+description: Something in the stack does not work as documented
+title: "[bug] "
+labels: [bug]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      description: Clear description of the problem.
+      placeholder: The rundeck-bootstrap container exits with...
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. cp .env.example .env
+        2. docker compose up -d --build
+        3. ...
+    validations:
+      required: true
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      options:
+        - docker-compose / stack startup
+        - Rundeck (jobs, bootstrap, ACL)
+        - Talend runner (job execution, SSH)
+        - Talend builder (Maven build)
+        - Webhook handler
+        - TAC platform (Flask portal)
+        - Monitoring (Prometheus / Grafana / Alertmanager)
+        - Storage (MinIO / Nexus / PostgreSQL)
+        - Documentation
+    validations:
+      required: true
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs
+      description: "`docker compose logs <service>` output (secrets redacted!)"
+      render: shell
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      placeholder: "macOS 15 / Docker Desktop 4.30, or Ubuntu 24.04 / Docker 26"
+    validations:
+      required: true

@@ -90,15 +90,26 @@ All credentials are placeholders in `.env.example`. **Change them.**
 
 Three job templates are pre-loaded into the Rundeck `talend` project:
 
-- **Run Talend Job** — run an already-built job (`JOB_NAME`, `CONTEXT`, `JOB_ARGS`).
-- **Build and Deploy Talend Job** — clone from Git, compile, then run
-  (`GIT_URL`, `GIT_BRANCH`, `JOB_NAME`, `CONTEXT`).
+- **Run Talend Job** — run an already-built job.
+- **Build and Deploy Talend Job** — clone from Git, compile, then run.
 - **Scheduled Talend Pipeline** — example nightly job (schedule disabled by
   default; enable it in the UI).
 
-Jobs execute on the `talend-runner` node over SSH and look up artifacts under
-`/artifacts/<JOB_NAME>/`. See [`docs/USAGE.md`](docs/USAGE.md) for the expected
-Talend project layout and a full walkthrough.
+Every template exposes Talend-aware execution options:
+
+| Option           | Purpose                                                  |
+|------------------|----------------------------------------------------------|
+| `CONTEXT`        | Talend context (`--context=X`)                           |
+| `CONTEXT_PARAMS` | `key=value` pairs passed as `--context_param`            |
+| `JVM_OPTS`       | JVM flags (`-Xms/-Xmx`, GC, `-D...`) for the job process |
+| `JOB_ARGS`       | Extra raw arguments                                      |
+| `RUNNER_TAG`     | Which runner node(s) to dispatch to, by tag              |
+
+Jobs execute over SSH on runner nodes selected by tag (scale out by adding
+runner services/nodes — see the commented `talend-runner-xl` examples) and look
+up artifacts under `/artifacts/<JOB_NAME>/`. See
+[`docs/USAGE.md`](docs/USAGE.md) for the expected Talend project layout and a
+full walkthrough.
 
 ## CI/CD from Git
 

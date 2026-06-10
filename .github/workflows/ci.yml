@@ -1,0 +1,97 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  dockerfile-lint:
+    name: Lint Dockerfiles (hadolint)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: hadolint/hadolint-action@v3.1.0
+        with:
+          recursive: true
+          dockerfile: Dockerfile
+          # DL3008/DL3018: apt/apk version pinning is impractical for a template
+          ignore: DL3008,DL3018
+
+  shell-lint:
+    name: Lint shell scripts (shellcheck)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run shellcheck on all shell scripts
+        run: |
+          set -euo pipefail
+          mapfile -t scripts < <(git ls-files '*.sh')
+          printf 'Checking %s files\n' "${#scripts[@]}"
+          shellcheck --severity=warning "${scripts[@]}"
+
+  compose-validate:
+    name: Validate docker-compose
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: docker compose config
+        run: |
+          cp .env.example .env
+          docker compose config --quiet
+          echo "compose configuration is valid"
+
+  config-validate:
+    name: Validate Rundeck jobs, YAML & Grafana dashboards
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Parse all YAML and JSON config files
+        run: |
+          python3 - <<'EOF'
+          import glob, json, sys, yaml
+
+          failed = False
+          for path in glob.glob('**/*.yml', recursive=True) + glob.glob('**/*.yaml', recursive=True):
+              try:
+                  with open(path) as fh:
+                      yaml.safe_load(fh)
+                  print(f"OK   {path}")
+              except yaml.YAMLError as exc:
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+                  failed = True
+          for path in glob.glob('monitoring/grafana/dashboards/*.json'):
+              try:
+                  with open(path) as fh:
+                      json.load(fh)
+                  print(f"OK   {path}")
+              except json.JSONDecodeError as exc:
+                  print(f"FAIL {path}: {exc}", file=sys.stderr)
+                  failed = True
+          sys.exit(1 if failed else 0)
+          EOF
+      - name: Check Rundeck job definitions (required keys, unique UUIDs)
+        run: |
+          python3 - <<'EOF'
+          import sys, yaml
+
+          with open('rundeck/projects/talend/jobs/talend-jobs.yaml') as fh:
+              jobs = yaml.safe_load(fh)
+
+          errors = []
+          uuids = [j.get('uuid') for j in jobs]
+          if len(uuids) != len(set(uuids)):
+              errors.append("duplicate job UUIDs")
+          for job in jobs:
+              name = job.get('name', '<unnamed>')
+              for key in ('uuid', 'name', 'sequence', 'nodefilters'):
+                  if key not in job:
+                      errors.append(f"{name}: missing '{key}'")
+              if not job.get('sequence', {}).get('commands'):
+                  errors.append(f"{name}: no commands")
+
+          if errors:
+              print("\n".join(errors), file=sys.stderr)
+              sys.exit(1)
+          print(f"OK: {len(jobs)} Rundeck job definitions valid")
+          EOF
