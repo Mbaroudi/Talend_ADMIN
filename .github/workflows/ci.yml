@@ -17,6 +17,8 @@ jobs:
           dockerfile: Dockerfile
           # DL3008/DL3018: apt/apk version pinning is impractical for a template
           ignore: DL3008,DL3018
+          # info-level suggestions (e.g. DL3059) should not fail CI
+          failure-threshold: warning
 
   shell-lint:
     name: Lint shell scripts (shellcheck)
